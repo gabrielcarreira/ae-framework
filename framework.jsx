@@ -33,9 +33,31 @@ function changeName(lays, base, init, count) {
   }
 }
 
-function setExpression(props, exp) {
-  for (var i = 0; i < props.length; i++) {
-    props[i].expression = exp;
+function setProp(lays, prop, val) {
+  const props = prop.split(".");
+  for (var i = 0; i < lays.length; i++) {
+    var obj = lays[i];
+    for (var j = 0; j < props.length-1; j++) {
+        obj = obj[props[j]];
+    }
+    obj[props[props.length-1]] = val;
+  }
+}
+
+
+function setMethod(lays, prop, method, val) {
+  const props = prop.split(".");
+  var obj = {};
+  for (var i = 0; i < lays.length; i++) {
+    obj = lays[i];
+    for (var j = 0; j < props.length; j++) {
+      obj = obj[props[j]];
+    }
+    try {
+      obj[method].apply(obj, val);
+    } catch (e) {
+      alert(e);
+    }
   }
 }
 
@@ -89,8 +111,6 @@ function applyExpression(preset, exp) {
 }
 
 function getPath(presetName) {
-  var folderObj = new Folder(
-    new File($.fileName).parent.fsName + presetName
-  );
+  var folderObj = new Folder(new File($.fileName).parent.fsName + presetName);
   return folderObj;
 }
