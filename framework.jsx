@@ -1,116 +1,157 @@
 function getFrame() {
-  var comp = app.project.activeItem;
-  var select = comp.selectedLayers;
+  var comp = app.project.activeItem
+  var select = comp.selectedLayers
 
-  var sel = [],
-    selPos = [];
+  var sel = []
   for (var i = 0; i < select.length; i++) {
     sel.push({
       pos: select[i].transform.position,
       rot: select[i].transform.rotation,
       sca: select[i].transform.scale,
       opa: select[i].transform.opacity,
-      anc: select[i].transform.anchorPoint,
-    });
-    selPos.push(select[i].transform.position);
+      anc: select[i].transform.anchorPoint
+    })
   }
 
   const obj = {
     comp: comp,
     select: select,
-    sel: sel,
-    selPos: selPos,
-  };
+    sel: sel
+  }
 
-  return obj;
+  return obj
 }
 
 function changeName(lays, base, init, count) {
-  if (init == undefined) init = 1;
-  if (count == undefined) count = 1;
+  if (init == undefined) init = 1
+  if (count == undefined) count = 1
   for (var i = 0; i < lays.length; i++) {
-    lays[i].name = base + " " + (count * i + init);
+    lays[i].name = base + ' ' + (count * i + init)
   }
 }
 
-function setProp(lays, prop, val) {
-  const props = prop.split(".");
-  for (var i = 0; i < lays.length; i++) {
-    var obj = lays[i];
-    for (var j = 0; j < props.length-1; j++) {
-        obj = obj[props[j]];
+/**
+ * setProperty function
+ *
+ * @param {Array} layers - An array of layers to apply the property value
+ * @param {String} propertyPath - The property path to access the property, for example "transform.position"
+ * @param {Any} value - The value to be set to the property
+ */
+function setProperty(layers, propertyPath, value) {
+  if (layers.constructor !== Array) {
+    throw new Error('Expected first parameter to be an array of layers')
+  }
+  if (typeof propertyPath !== 'string') {
+    throw new Error(
+      'Expected second parameter to be a string representing the property path'
+    )
+  }
+  const properties = propertyPath.split('.')
+  for (var i = 0; i < layers.length; i++) {
+    var obj = layers[i]
+    for (var j = 0; j < properties.length - 1; j++) {
+      obj = obj[properties[j]]
     }
-    obj[props[props.length-1]] = val;
+    obj[properties[properties.length - 1]] = value
   }
 }
 
-
-function setMethod(lays, prop, method, val) {
-  const props = prop.split(".");
-  var obj = {};
-  for (var i = 0; i < lays.length; i++) {
-    obj = lays[i];
-    for (var j = 0; j < props.length; j++) {
-      obj = obj[props[j]];
+/**
+ * setMethod function
+ *
+ * @param {Array} layers - An array of layers to apply the method
+ * @param {String} propertyPath - The property path to access the property containing the method, for example "transform.scale"
+ * @param {String} methodName - The method name to be called, for example "setValueAtTime"
+ * @param {Array} args - An array of arguments to be passed to the method
+ */
+function setMethod(layers, propertyPath, methodName, args) {
+  if (layers.constructor !== Array) {
+    throw new Error('Expected first parameter to be an array of layers')
+  }
+  if (typeof propertyPath !== 'string') {
+    throw new Error(
+      'Expected second parameter to be a string representing the property path'
+    )
+  }
+  if (typeof methodName !== 'string') {
+    throw new Error(
+      'Expected third parameter to be a string representing the method name'
+    )
+  }
+  if (args.constructor !== Array) {
+    throw new Error('Expected fourth parameter to be an array of arguments')
+  }
+  const properties = propertyPath.split('.')
+  for (var i = 0; i < layers.length; i++) {
+    var obj = layers[i]
+    for (var j = 0; j < properties.length; j++) {
+      obj = obj[properties[j]]
     }
-    try {
-      obj[method].apply(obj, val);
-    } catch (e) {
-      alert(e);
-    }
+    obj[methodName].apply(obj, args)
   }
 }
-
+/**
+ * Apply preset and expressions in selected properties
+ * @param {string} preset - path of the preset
+ * @param {string} exp - expression to be applied
+ */
 function applyExpression(preset, exp) {
-  var comp = app.project.activeItem;
-  var selected = comp.selectedLayers;
+  var comp = app.project.activeItem
+  var selected = comp.selectedLayers
   var presetLayers = [],
     propLayers = [],
-    propNames = [];
-  var ind, numProps;
+    propNames = []
+  var ind, numProps
   for (var i = 0; i < selected.length; i++) {
-    var prop = selected[i].selectedProperties;
+    var prop = selected[i].selectedProperties
     for (var j = 0; j < prop.length; j++) {
-      var myProperty = prop[j];
-      var myLayer = myProperty.propertyGroup(myProperty.propertyDepth);
+      var myProperty = prop[j]
+      var myLayer = myProperty.propertyGroup(myProperty.propertyDepth)
       if (prop[j].value != undefined && myLayer.index == selected[i].index) {
-        var propName = prop[j].name;
-        var propExp = exp;
-        prop[j].expression = propExp.replace(/Name/g, propName);
-        propNames.push(propName);
+        var propName = prop[j].name
+        var propExp = exp
+        prop[j].expression = propExp.replace(/Name/g, propName)
+        propNames.push(propName)
       }
     }
-    ind = selected[i].index;
-    numProps = selected[i].property("ADBE Effect Parade").numProperties;
-    propLayers.push(ind, numProps, propNames);
-    presetLayers.push(propLayers);
-    propLayers = [];
-    propNames = [];
+    ind = selected[i].index
+    numProps = selected[i].property('ADBE Effect Parade').numProperties
+    propLayers.push(ind, numProps, propNames)
+    presetLayers.push(propLayers)
+    propLayers = []
+    propNames = []
   }
 
   for (var k = 0; k < selected.length; k++) {
-    selected[k].selected = false;
+    selected[k].selected = false
   }
 
-  var presetPath = getPath(preset);
+  var presetPath = getPath(preset)
   for (var j = 0; j < presetLayers.length; j++) {
-    var layInd = presetLayers[j];
-    var lay = comp.layer(layInd[0]);
-    var localProps = presetLayers[j][2];
+    var layInd = presetLayers[j]
+    var lay = comp.layer(layInd[0])
+    var localProps = presetLayers[j][2]
     for (var l = 0; l < localProps.length; l++) {
-      lay.selected = true;
-      comp.applyPreset(presetPath);
+      lay.selected = true
+      comp.applyPreset(presetPath)
       var propAdd = lay
-        .property("ADBE Effect Parade")
-        .property(layInd[1] + l + 1);
-      propAdd.selected = false;
-      propAdd.name = propAdd.name.replace(/Name/g, localProps[l]);
-      lay.selected = false;
+        .property('ADBE Effect Parade')
+        .property(layInd[1] + l + 1)
+      propAdd.selected = false
+      propAdd.name = propAdd.name.replace(/Name/g, localProps[l])
+      lay.selected = false
     }
   }
 }
 
+/**
+ * Get the path of the preset
+ * @param {string} presetName - name of the preset
+ * @return {string} path of the preset
+ */
 function getPath(presetName) {
-  var folderObj = new Folder(new File($.fileName).parent.fsName + presetName);
-  return folderObj;
+  var folderObj = new Folder(
+    new File($.fileName).parent.fsName + '/' + presetName
+  )
+  return folderObj
 }
