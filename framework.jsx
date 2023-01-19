@@ -1,6 +1,12 @@
+/**
+ * getFrame function
+ *
+ * @returns {Object} An object containing the active composition, the selected layers, and an array of objects for each selected layer, with properties for the layer's position, rotation, scale, opacity and anchor point.
+ */
 function getFrame() {
   var comp = app.project.activeItem
   var select = comp.selectedLayers
+  var allLayers = comp.layers
 
   var sel = []
   for (var i = 0; i < select.length; i++) {
@@ -13,8 +19,14 @@ function getFrame() {
     })
   }
 
+  var layers = []
+  for (var i = 1; i <= allLayers.length; i++) {
+    layers.push(allLayers[i])
+  }
+
   const obj = {
     comp: comp,
+    layers: layers,
     select: select,
     sel: sel
   }
@@ -156,64 +168,60 @@ function getPath(presetName) {
   return folderObj
 }
 
-
 /**
  * offsetLayers function
  *
  * @param {Array} layers - An array of layers to offset
- * @param {Number} delay - The delay in seconds between each layer
- * @param {String} mode - The offset mode: 'normal', 'reverse', 'center', 'top', 'bottom' or 'random'
+ * @param {Number} delay - The delay between layers offset in seconds
+ * @param {Number} mode - The offset mode ('normal', 'reverse', 'convex', 'concave', 'random')
  */
 function offsetLayers(layers, delay, mode) {
-  var comp = app.project.activeItem;
-  var offset = delay * comp.frameDuration;
-
-  switch (mode) {
-      case "normal":
-          for (var i = 0; i < layers.length; i++) {
-              layers[i].startTime += offset * i;
-          }
-          break;
-      case "reverse":
-          for (var i = 0; i < layers.length; i++) {
-              layers[i].startTime += offset * (layers.length - (i + 1));
-          }
-          break;
-      case "center":
-          var mid = layers.length / 2;
-          for (var i = 0; i < layers.length; i++) {
-              layers[i].startTime += offset * (i - mid);
-          }
-          break;
-      case "top":
-          var half = layers.length / 2;
-          for (var i = 0; i < half; i++) {
-              layers[i].startTime += offset * i;
-          }
-          for (var i = half; i < layers.length; i++) {
-              layers[i].startTime += offset * (layers.length - (i + 1));
-          }
-          break;
-      case "bottom":
-          var half = layers.length / 2;
-          for (var i = 0; i < half; i++) {
-              layers[i].startTime += offset * (layers.length - (i + 1));
-          }
-          for (var i = half; i < layers.length; i++) {
-              layers[i].startTime += offset * i;
-          }
-          break;
-      case "random":
-          var randomOffsets = [];
-          for (var i = 0; i < layers.length; i++) {
-              randomOffsets.push(Math.random() * offset);
-          }
-          randomOffsets.sort();
-          for (var i = 0; i < layers.length; i++) {
-              layers[i].startTime += randomOffsets[i];
-          }
-          break;
-      default:
-          throw new Error("Invalid offset mode: " + mode);
+  var comp = app.project.activeItem
+  var offset = delay * comp.frameDuration
+  if (layers === null) {
+    layers = comp.layers
   }
+
+  if (mode === 'normal') {
+    for (var i = 0; i < layers.length; i++) {
+      layers[i].startTime += offset * i
+    }
+  } else if (mode === 'reverse') {
+    for (var i = 0; i < layers.length; i++) {
+      layers[i].startTime += offset * (layers.length - (i + 1))
+    }
+  } else if (mode === 'random') {
+    var randomOffsets = []
+    for (var i = 0; i < layers.length; i++) {
+      randomOffsets.push(i)
+    }
+    randomOffsets = shuffle(randomOffsets)
+    for (var i = 0; i < layers.length; i++) {
+      layers[i].startTime += offset * randomOffsets[i]
+    }
+  } else if (mode === 'convex') {
+    var center = Math.ceil(layers.length / 2)
+    for (var i = 0; i < layers.length; i++) {
+      layers[i].startTime += offset * Math.abs(center - (i + 1))
+    }
+  } else if (mode === 'concave') {
+    var center = Math.ceil(layers.length / 2)
+    for (var i = 0; i < layers.length; i++) {
+      layers[i].startTime -=
+        offset * Math.abs(center - (i + 1)) - center * offset
+    }
+  } else {
+    throw new Error('Invalid offset mode: ' + mode)
+  }
+}
+
+// helper function to shuffle an array
+function shuffle(a) {
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1))
+    var temp = a[i]
+    a[i] = a[j]
+    a[j] = temp
+  }
+  return a
 }
