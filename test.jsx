@@ -7,8 +7,9 @@ app.endUndoGroup()
 function testLib() {
   const frame = new getFrame()
 
-  applyExpression('test.ffx', 'wiggle(1, effect("Test (Name)")(1))')
+  offsetLayers(frame.select, 1, 'reverse')
   return false
+  applyFFXExpression('test.ffx', 'wiggle(1, effect("Test (Name)")(1))')
   setProperty(frame.sel, 'pos.expression', 'wiggle(1, 50)')
   setProperty(frame.sel, 'rot.expression', 'wiggle(1, 20)')
 

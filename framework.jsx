@@ -95,7 +95,7 @@ function setMethod(layers, propertyPath, methodName, args) {
  * @param {string} preset - path of the preset
  * @param {string} exp - expression to be applied
  */
-function applyExpression(preset, exp) {
+function applyFFXExpression(preset, exp) {
   var comp = app.project.activeItem
   var selected = comp.selectedLayers
   var presetLayers = [],
@@ -154,4 +154,66 @@ function getPath(presetName) {
     new File($.fileName).parent.fsName + '/' + presetName
   )
   return folderObj
+}
+
+
+/**
+ * offsetLayers function
+ *
+ * @param {Array} layers - An array of layers to offset
+ * @param {Number} delay - The delay in seconds between each layer
+ * @param {String} mode - The offset mode: 'normal', 'reverse', 'center', 'top', 'bottom' or 'random'
+ */
+function offsetLayers(layers, delay, mode) {
+  var comp = app.project.activeItem;
+  var offset = delay * comp.frameDuration;
+
+  switch (mode) {
+      case "normal":
+          for (var i = 0; i < layers.length; i++) {
+              layers[i].startTime += offset * i;
+          }
+          break;
+      case "reverse":
+          for (var i = 0; i < layers.length; i++) {
+              layers[i].startTime += offset * (layers.length - (i + 1));
+          }
+          break;
+      case "center":
+          var mid = layers.length / 2;
+          for (var i = 0; i < layers.length; i++) {
+              layers[i].startTime += offset * (i - mid);
+          }
+          break;
+      case "top":
+          var half = layers.length / 2;
+          for (var i = 0; i < half; i++) {
+              layers[i].startTime += offset * i;
+          }
+          for (var i = half; i < layers.length; i++) {
+              layers[i].startTime += offset * (layers.length - (i + 1));
+          }
+          break;
+      case "bottom":
+          var half = layers.length / 2;
+          for (var i = 0; i < half; i++) {
+              layers[i].startTime += offset * (layers.length - (i + 1));
+          }
+          for (var i = half; i < layers.length; i++) {
+              layers[i].startTime += offset * i;
+          }
+          break;
+      case "random":
+          var randomOffsets = [];
+          for (var i = 0; i < layers.length; i++) {
+              randomOffsets.push(Math.random() * offset);
+          }
+          randomOffsets.sort();
+          for (var i = 0; i < layers.length; i++) {
+              layers[i].startTime += randomOffsets[i];
+          }
+          break;
+      default:
+          throw new Error("Invalid offset mode: " + mode);
+  }
 }
