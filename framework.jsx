@@ -225,3 +225,57 @@ function shuffle(a) {
   }
   return a
 }
+
+/**
+ * setAnchorPoint function
+ *
+ * @param {Array} layers - An array of layers to apply the anchor point
+ * @param {Number} X - The X value to add to the anchor point
+ * @param {Number} Y - The Y value to add to the anchor point
+ */
+function changeAnchorPoint(layers, X, Y) {
+  if (layers.constructor !== Array) {
+      throw new Error('Expected first parameter to be an array of layers')
+  }
+  if (typeof X !== 'number') {
+      throw new Error('Expected second parameter to be a number')
+  }
+  if (typeof Y !== 'number') {
+      throw new Error('Expected third parameter to be a number')
+  }
+    for (var k = 0; k < layers.length; k++) {
+      var layer = layers[k];
+      var comp = layer.containingComp;
+      var curTime = comp.time;
+      var layerAnchor = layer.anchorPoint.value;
+      var xSet = layer.sourceRectAtTime(curTime, false).width / 2;
+      var ySet = layer.sourceRectAtTime(curTime, false).height / 2;
+      var x = xSet + layer.sourceRectAtTime(curTime, false).left;
+      var y = ySet + layer.sourceRectAtTime(curTime, false).top;
+      var xAdd = (x - layerAnchor[0]) * (layer.scale.value[0] / 100);
+      var yAdd = (y - layerAnchor[1]) * (layer.scale.value[1] / 100);
+
+      if (layer.position.numKeys > 0) {
+        layer.anchorPoint.setValue([x, y]);
+        for (var i = 1; i <= layer.position.numKeys; i++) {
+          var layerPosition = layer.position.keyValue(i);
+          var pos = [layerPosition[0] + xAdd, layerPosition[1] + yAdd];
+          layer.position.setValueAtKey(i, pos);
+          var pos = layer.position.keyValue(i) + [X * xSet, Y * ySet];
+          layer.position.setValueAtKey(i, pos);
+        }
+      } else {
+        layer.anchorPoint.setValue([x, y]);
+        var layerPosition = layer.position.value;
+        layer.position.setValue([
+          layerPosition[0] + xAdd,
+          layerPosition[1] + yAdd,
+          layerPosition[2],
+        ]);
+        var pos = layer.position.value + [X * xSet, Y * ySet];
+        layer.position.setValue(pos);
+      }
+      var anc = layer.anchorPoint.value + [X * xSet, Y * ySet];
+      layer.anchorPoint.setValue(anc);
+    }
+  }
